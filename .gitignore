@@ -4,7 +4,6 @@
 *.pdb
 Cargo.lock
 
-
 # Python
 __pycache__/
 *.py[cod]
@@ -14,6 +13,11 @@ __pycache__/
 venv/
 env/
 *.egg-info/
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # Data files
 data/*.csv
