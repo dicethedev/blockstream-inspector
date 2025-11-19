@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+"""
+BlockStream Inspector - Python Analysis & Visualization
+Analyzes exported CSV data from the BlockStream Inspector Rust tool
+"""
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from datetime import datetime
+import argparse
+
+# Set style
+sns.set_style("darkgrid")
+plt.rcParams['figure.figsize'] = (14, 8)
+
+
+class BlockLifecycleAnalyzer:
+    def __init__(self, csv_path):
+        """Initialize analyzer with CSV data"""
+        self.df = pd.read_csv(csv_path)
+        self.df['timestamp_dt'] = pd.to_datetime(self.df['timestamp'], unit='s')
+        print(f"Loaded {len(self.df)} blocks from {csv_path}")
+        print(f"Block range: {self.df['block_number'].min()} - {self.df['block_number'].max()}")
+        print()
+
+    def analyze_gas_metrics(self):
+        """Analyze gas usage patterns"""
+        print("=" * 60)
+        print("GAS ANALYSIS")
+        print("=" * 60)
+        
+        # Summary statistics
+        print("\nGas Utilization Statistics:")
+        print(f"  Average: {self.df['gas_utilization'].mean():.2f}%")
+        print(f"  Median: {self.df['gas_utilization'].median():.2f}%")
+        print(f"  Min: {self.df['gas_utilization'].min():.2f}%")
+        print(f"  Max: {self.df['gas_utilization'].max():.2f}%")
+        
+        print("\nBase Fee Statistics (gwei):")
+        print(f"  Average: {self.df['base_fee_gwei'].mean():.2f}")
+        print(f"  Median: {self.df['base_fee_gwei'].median():.2f}")
+        print(f"  Min: {self.df['base_fee_gwei'].min():.2f}")
+        print(f"  Max: {self.df['base_fee_gwei'].max():.2f}")
+        
+        print("\nTotal Fees Burned: {:.4f} ETH".format(self.df['fees_burned_eth'].sum()))
+        print("Total Priority Fees: {:.4f} ETH".format(self.df['priority_fees_eth'].sum()))
+        
+        # Visualization
+        fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+        
+        # Gas utilization over time
+        axes[0, 0].plot(self.df['block_number'], self.df['gas_utilization'], alpha=0.7)
+        axes[0, 0].set_title('Gas Utilization Over Time', fontsize=14, fontweight='bold')
+        axes[0, 0].set_xlabel('Block Number')
+        axes[0, 0].set_ylabel('Utilization (%)')
+        axes[0, 0].axhline(y=50, color='r', linestyle='--', alpha=0.5, label='50% threshold')
+        axes[0, 0].legend()
+        
+        # Base fee dynamics
+        axes[0, 1].plot(self.df['block_number'], self.df['base_fee_gwei'], 
+                       color='orange', alpha=0.7)
+        axes[0, 1].set_title('Base Fee Dynamics', fontsize=14, fontweight='bold')
+        axes[0, 1].set_xlabel('Block Number')
+        axes[0, 1].set_ylabel('Base Fee (gwei)')
+        
+        # Gas utilization distribution
+        axes[1, 0].hist(self.df['gas_utilization'], bins=50, edgecolor='black', alpha=0.7)
+        axes[1, 0].set_title('Gas Utilization Distribution', fontsize=14, fontweight='bold')
+        axes[1, 0].set_xlabel('Utilization (%)')
+        axes[1, 0].set_ylabel('Frequency')
+        
+        # Base fee vs utilization
+        axes[1, 1].scatter(self.df['gas_utilization'], self.df['base_fee_gwei'], 
+                          alpha=0.5, s=20)
+        axes[1, 1].set_title('Base Fee vs Gas Utilization', fontsize=14, fontweight='bold')
+        axes[1, 1].set_xlabel('Gas Utilization (%)')
+        axes[1, 1].set_ylabel('Base Fee (gwei)')
+        
+        plt.tight_layout()
+        plt.savefig('gas_analysis.png', dpi=300, bbox_inches='tight')
+        print("\n✓ Saved visualization: gas_analysis.png")
+        plt.close()
+
+    def analyze_block_timing(self):
+        """Analyze block production timing"""
+        print("\n" + "=" * 60)
+        print("BLOCK TIMING ANALYSIS")
+        print("=" * 60)
+        
+        print("\nBlock Time Statistics (seconds):")
+        print(f"  Average: {self.df['block_time'].mean():.2f}s")
+        print(f"  Median: {self.df['block_time'].median():.2f}s")
+        print(f"  Std Dev: {self.df['block_time'].std():.2f}s")
+        print(f"  Min: {self.df['block_time'].min():.2f}s")
+        print(f"  Max: {self.df['block_time'].max():.2f}s")
+        
+        # Find blocks with unusual timing
+        mean_time = self.df['block_time'].mean()
+        std_time = self.df['block_time'].std()
+        outliers = self.df[np.abs(self.df['block_time'] - mean_time) > 2 * std_time]
+        
+        print(f"\nBlocks with unusual timing (±2σ): {len(outliers)}")
+        if len(outliers) > 0:
+            print("\nTop 5 slowest blocks:")
+            for _, block in outliers.nlargest(5, 'block_time').iterrows():
+                print(f"  Block {int(block['block_number'])}: {block['block_time']:.2f}s")
+        
+        # Visualization
+        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+        
+        # Block time over time
+        axes[0].plot(self.df['block_number'], self.df['block_time'], alpha=0.7)
+        axes[0].axhline(y=12, color='g', linestyle='--', alpha=0.5, label='Target: 12s')
+        axes[0].set_title('Block Production Time', fontsize=14, fontweight='bold')
+        axes[0].set_xlabel('Block Number')
+        axes[0].set_ylabel('Block Time (seconds)')
+        axes[0].legend()
+        
+        # Block time distribution
+        axes[1].hist(self.df['block_time'], bins=50, edgecolor='black', alpha=0.7)
+        axes[1].axvline(x=12, color='g', linestyle='--', alpha=0.5, label='Target: 12s')
+        axes[1].set_title('Block Time Distribution', fontsize=14, fontweight='bold')
+        axes[1].set_xlabel('Block Time (seconds)')
+        axes[1].set_ylabel('Frequency')
+        axes[1].legend()
+        
+        plt.tight_layout()
+        plt.savefig('timing_analysis.png', dpi=300, bbox_inches='tight')
+        print("\n✓ Saved visualization: timing_analysis.png")
+        plt.close()
+
+    def analyze_transaction_types(self):
+        """Analyze transaction type distribution"""
+        print("\n" + "=" * 60)
+        print("TRANSACTION TYPE ANALYSIS")
+        print("=" * 60)
+        
+        # Calculate totals
+        total_legacy = self.df['tx_legacy'].sum()
+        total_eip2930 = self.df['tx_eip2930'].sum()
+        total_eip1559 = self.df['tx_eip1559'].sum()
+        total_eip4844 = self.df['tx_eip4844'].sum()
+        total_txs = total_legacy + total_eip2930 + total_eip1559 + total_eip4844
+        
+        print(f"\nTotal Transactions: {total_txs}")
+        print(f"  Legacy (Type 0): {total_legacy} ({total_legacy/total_txs*100:.1f}%)")
+        print(f"  EIP-2930 (Type 1): {total_eip2930} ({total_eip2930/total_txs*100:.1f}%)")
+        print(f"  EIP-1559 (Type 2): {total_eip1559} ({total_eip1559/total_txs*100:.1f}%)")
+        print(f"  EIP-4844 Blob (Type 3): {total_eip4844} ({total_eip4844/total_txs*100:.1f}%)")
+        
+        # Visualization
+        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+        
+        # Pie chart
+        sizes = [total_legacy, total_eip2930, total_eip1559, total_eip4844]
+        labels = ['Legacy', 'EIP-2930', 'EIP-1559', 'EIP-4844']
+        colors = ['#ff9999', '#66b3ff', '#99ff99', '#ffcc99']
+        
+        axes[0].pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                   startangle=90, textprops={'fontsize': 12})
+        axes[0].set_title('Transaction Type Distribution', fontsize=14, fontweight='bold')
+        
+        # Transaction types over time
+        axes[1].plot(self.df['block_number'], self.df['tx_eip1559'], 
+                    label='EIP-1559', alpha=0.7)
+        axes[1].plot(self.df['block_number'], self.df['tx_legacy'], 
+                    label='Legacy', alpha=0.7)
+        if total_eip4844 > 0:
+            axes[1].plot(self.df['block_number'], self.df['tx_eip4844'], 
+                        label='EIP-4844', alpha=0.7)
+        axes[1].set_title('Transaction Types Over Time', fontsize=14, fontweight='bold')
+        axes[1].set_xlabel('Block Number')
+        axes[1].set_ylabel('Count per Block')
+        axes[1].legend()
+        
+        plt.tight_layout()
+        plt.savefig('transaction_types.png', dpi=300, bbox_inches='tight')
+        print("\n✓ Saved visualization: transaction_types.png")
+        plt.close()
+
+    def analyze_mev(self):
+        """Analyze MEV activity"""
+        print("\n" + "=" * 60)
+        print("MEV ANALYSIS")
+        print("=" * 60)
+        
+        total_mev = self.df['mev_estimated_eth'].sum()
+        blocks_with_mev = len(self.df[self.df['mev_estimated_eth'] > 0])
+        
+        print(f"\nBlocks analyzed: {len(self.df)}")
+        print(f"Blocks with MEV activity: {blocks_with_mev} ({blocks_with_mev/len(self.df)*100:.1f}%)")
+        print(f"Total estimated MEV: {total_mev:.4f} ETH")
+        print(f"Average MEV per block: {total_mev/len(self.df):.4f} ETH")
+        
+        if blocks_with_mev > 0:
+            print(f"Average MEV (when present): {total_mev/blocks_with_mev:.4f} ETH")
+        
+        total_sandwiches = self.df['mev_sandwich_attacks'].sum()
+        total_arbitrage = self.df['mev_arbitrage_ops'].sum()
+        total_liquidations = self.df['mev_liquidations'].sum()
+        
+        print(f"\nMEV Activity Breakdown:")
+        print(f"  Sandwich attacks: {int(total_sandwiches)}")
+        print(f"  Arbitrage operations: {int(total_arbitrage)}")
+        print(f"  Liquidations: {int(total_liquidations)}")
+        
+        # Visualization
+        if total_mev > 0:
+            fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+            
+            # MEV over time
+            axes[0].bar(self.df['block_number'], self.df['mev_estimated_eth'], 
+                       alpha=0.7, color='red')
+            axes[0].set_title('MEV Extraction Over Time', fontsize=14, fontweight='bold')
+            axes[0].set_xlabel('Block Number')
+            axes[0].set_ylabel('MEV (ETH)')
+            
+            # MEV distribution
+            mev_blocks = self.df[self.df['mev_estimated_eth'] > 0]
+            axes[1].hist(mev_blocks['mev_estimated_eth'], bins=30, 
+                        edgecolor='black', alpha=0.7, color='red')
+            axes[1].set_title('MEV Distribution (Non-zero Blocks)', fontsize=14, fontweight='bold')
+            axes[1].set_xlabel('MEV (ETH)')
+            axes[1].set_ylabel('Frequency')
+            
+            plt.tight_layout()
+            plt.savefig('mev_analysis.png', dpi=300, bbox_inches='tight')
+            print("\n✓ Saved visualization: mev_analysis.png")
+            plt.close()
+
+    def analyze_pbs(self):
+        """Analyze Proposer-Builder Separation"""
+        print("\n" + "=" * 60)
+        print("PBS (PROPOSER-BUILDER SEPARATION) ANALYSIS")
+        print("=" * 60)
+        
+        pbs_blocks = len(self.df[self.df['is_pbs_block'] == True])
+        
+        print(f"\nTotal blocks: {len(self.df)}")
+        print(f"PBS blocks: {pbs_blocks} ({pbs_blocks/len(self.df)*100:.1f}%)")
+        print(f"Non-PBS blocks: {len(self.df) - pbs_blocks}")
+        
+        if pbs_blocks > 0:
+            # Builder distribution
+            builders = self.df[self.df['is_pbs_block'] == True]['builder_address'].value_counts()
+            print(f"\nTop builders:")
+            for builder, count in builders.head(10).items():
+                print(f"  {builder}: {count} blocks ({count/pbs_blocks*100:.1f}%)")
+
+    def generate_summary_report(self):
+        """Generate comprehensive summary report"""
+        print("\n" + "=" * 60)
+        print("COMPREHENSIVE SUMMARY REPORT")
+        print("=" * 60)
+        
+        print(f"\nDataset Overview:")
+        print(f"  Blocks analyzed: {len(self.df)}")
+        print(f"  Block range: {self.df['block_number'].min()} - {self.df['block_number'].max()}")
+        print(f"  Time range: {self.df['timestamp_dt'].min()} to {self.df['timestamp_dt'].max()}")
+        print(f"  Total transactions: {self.df['tx_count'].sum()}")
+        
+        print(f"\nKey Metrics:")
+        print(f"  Average block time: {self.df['block_time'].mean():.2f}s")
+        print(f"  Average gas utilization: {self.df['gas_utilization'].mean():.2f}%")
+        print(f"  Average base fee: {self.df['base_fee_gwei'].mean():.2f} gwei")
+        print(f"  Total fees burned: {self.df['fees_burned_eth'].sum():.4f} ETH")
+        print(f"  Total MEV extracted: {self.df['mev_estimated_eth'].sum():.4f} ETH")
+        print(f"  PBS adoption: {len(self.df[self.df['is_pbs_block'] == True])/len(self.df)*100:.1f}%")
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Analyze Ethereum block lifecycle data')
+    parser.add_argument('csv_file', help='Path to CSV file exported from EBLA')
+    parser.add_argument('--all', action='store_true', help='Run all analyses')
+    parser.add_argument('--gas', action='store_true', help='Gas analysis only')
+    parser.add_argument('--timing', action='store_true', help='Timing analysis only')
+    parser.add_argument('--txs', action='store_true', help='Transaction analysis only')
+    parser.add_argument('--mev', action='store_true', help='MEV analysis only')
+    parser.add_argument('--pbs', action='store_true', help='PBS analysis only')
+    
+    args = parser.parse_args()
+    
+    analyzer = BlockLifecycleAnalyzer(args.csv_file)
+    
+    if args.all or not any([args.gas, args.timing, args.txs, args.mev, args.pbs]):
+        analyzer.analyze_gas_metrics()
+        analyzer.analyze_block_timing()
+        analyzer.analyze_transaction_types()
+        analyzer.analyze_mev()
+        analyzer.analyze_pbs()
+        analyzer.generate_summary_report()
+    else:
+        if args.gas:
+            analyzer.analyze_gas_metrics()
+        if args.timing:
+            analyzer.analyze_block_timing()
+        if args.txs:
+            analyzer.analyze_transaction_types()
+        if args.mev:
+            analyzer.analyze_mev()
+        if args.pbs:
+            analyzer.analyze_pbs()
+        analyzer.generate_summary_report()
+
+
+if __name__ == '__main__':
+    main()
