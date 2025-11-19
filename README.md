@@ -17,25 +17,25 @@ BlockStream Inspector provides deep insights into Ethereum's block lifecycle by:
 ```mermaid
 graph TD
     %% 1. Input Source
-    A[Ethereum Node (RPC Endpoint)]
-    
+    A[Ethereum Node RPC]
+
     %% 2. Rust Core - BlockStream Inspector
-    subgraph BlockStream Inspector Rust Core (src/)
+    subgraph RustCore["BlockStreamInspector src"]
         direction LR
         B[RPC Client]
         C[Analyzer Engine]
-        D[Exporter (CSV)]
+        D[Exporter CSV]
         
         B --> C
         C --> D
     end
-    
+
     %% 3. Output Stage - Python Analysis
-    E[Python Analysis (scripts/analyze.py)<br/>- Statistical Analysis<br/>- Visualization (matplotlib/seaborn)<br/>- MEV Detection & Quantification]
-    
+    E[Python Analysis\nStatistical Analysis\nVisualization\nMEV Detection]
+
     %% 4. Connections
-    A -- JSON-RPC --> BlockStream Inspector
-    D -- CSV Export --> E
+    A -->|JSON-RPC| RustCore
+    D -->|CSV Export| E
 ```
 
 ## Quick Start
@@ -136,48 +136,46 @@ python3 scripts/analyze.py blocks.csv --timing   # Block timing only
 
 ```mermaid
 graph TD
-    %% Define Node Styles (Optional, for visual clarity)
+    %% Define Node Styles
     classDef step fill:#f9f,stroke:#333,stroke-width:2px,color:#000;
     classDef subprocess fill:#add8e6,stroke:#333,stroke-width:1px,color:#000;
     classDef keypoint fill:#e0b0ff,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
 
     %% 1. Proposer Selection
-    subgraph S1 [1. Proposer Selection]
-        P1(Validator chosen by beacon chain)
+    subgraph S1["1. Proposer Selection"]
+        P1[Validator chosen by beacon chain]
         class P1 step;
     end
 
-    %% 2. Block Building (PBS)
-    subgraph S2 [2. Block Building (PBS)]
-        B1{Builder constructs execution payload}
-        B2(Includes high-value MEV transactions)
-        B3(Submits sealed bid to proposer)
+    %% 2. Block Building PBS
+    subgraph S2["2. Block Building PBS"]
+        B1[Builder constructs execution payload]
+        B2[Includes high-value MEV transactions]
+        B3[Submits sealed bid to proposer]
         
         B1 --> B2 --> B3
         class B1,B2,B3 subprocess;
     end
 
     %% 3. Block Proposal
-    subgraph S3 [3. Block Proposal]
-        P2{Proposer signs beacon block}
-        P3(Includes execution payload hash)
+    subgraph S3["3. Block Proposal"]
+        P2[Proposer signs beacon block]
+        P3[Includes execution payload hash]
         
         P2 --> P3
         class P2,P3 subprocess;
     end
 
     %% 4. Block Validation
-    subgraph S4 [4. Block Validation]
-        V1{Execution layer validates payload}
-        V2{Consensus layer validates attestations}
-        V3(Block added to canonical chain)
+    subgraph S4["4. Block Validation"]
+        V1[Execution layer validates payload]
+        V2[Consensus layer validates attestations]
+        V3[Block added to canonical chain]
         
         V1 --> V3
         V2 --> V3
         class V1,V2,V3 subprocess;
     end
-
-    %% 5
 ```
 
 ### Data Structures
