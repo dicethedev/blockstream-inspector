@@ -1,5 +1,5 @@
 [package]
-name = "blockstream-inspector"
+name = "blockstream_inspector"
 version = "0.1.0"
 edition = "2024"
 authors = ["Blessing Samuel <dicethedev@gmail.com>"]
