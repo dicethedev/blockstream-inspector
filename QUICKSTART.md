@@ -102,7 +102,7 @@ Timestamp: 1698765432
 ### 4. Live Monitoring
 ```bash
 # Monitor next 10 blocks
-./target/release/blockstream-inspector --rpc $RPC_URL live --count 10 --output live.csv
+./target/release/blockstream-inspector --rpc $RPC_URL live --count 10 --output data/live.csv
 ```
 
 ### 5. MEV Detection
@@ -114,12 +114,12 @@ Timestamp: 1698765432
 ### 6. Python Analysis
 ```bash
 # Run comprehensive analysis
-python3 scripts/analyze.py blocks.csv --all
+python3 scripts/analyze.py data/blocks.csv --all
 
 # Run specific analyses
-python3 scripts/analyze.py blocks.csv --gas     # Gas metrics only
-python3 scripts/analyze.py blocks.csv --mev     # MEV analysis only
-python3 scripts/analyze.py blocks.csv --timing  # Block timing only
+python3 scripts/analyze.py data/blocks.csv --gas     # Gas metrics only
+python3 scripts/analyze.py data/blocks.csv --mev     # MEV analysis only
+python3 scripts/analyze.py data/blocks.csv --timing  # Block timing only
 ```
 
 ## Troubleshooting
@@ -189,40 +189,41 @@ wait
 ## Common Workflows
 
 ### Daily MEV Monitoring
+
 ```bash
 #!/bin/bash
 # Get last 7200 blocks (approximately 24 hours)
-LATEST=$(./target/release/blockstream-inspector --rpc $RPC_URL block --number latest 2>/dev/null | grep "Block Number" | awk '{print $3}')
+LATEST=$(./target/release/blockstream-inspector --rpc block --number latest 2>/dev/null | grep "Block Number" | awk '{print $3}')
 START=$((LATEST - 7200))
 
-./target/release/blockstream-inspector --rpc $RPC_URL range \
+./target/release/blockstream-inspector --rpc range \
     --start $START \
     --end $LATEST \
     --output daily_$(date +%Y%m%d).csv
 
-python3 scripts/analyze.py daily_$(date +%Y%m%d).csv --mev
+python3 scripts/analyze.py data/daily_$(date +%Y%m%d).csv --mev
 ```
 
 ### Historical Analysis
 ```bash
 # Analyze specific period (e.g., post-Dencun upgrade)
-./target/release/blockstream-inspector --rpc $RPC_URL range \
+./target/release/blockstream-inspector --rpc range \
     --start 19426587 \
     --end 19426687 \
-    --output post_dencun.csv
+    --output data/post_dencun.csv
 
-python3 scripts/analyze.py post_dencun.csv --all
+python3 scripts/analyze.py data/post_dencun.csv --all
 ```
 
 ### Builder Competition Analysis
 ```bash
 # Focus on PBS metrics
-./target/release/blockstream-inspector --rpc $RPC_URL range \
+./target/release/blockstream-inspector --rpc range \
     --start 18000000 \
     --end 18001000 \
-    --output builder_analysis.csv
+    --output data/builder_analysis.csv
 
-python3 scripts/analyze.py builder_analysis.csv --pbs
+python3 scripts/analyze.py data/builder_analysis.csv --pbs
 ```
 
 ## Next Steps

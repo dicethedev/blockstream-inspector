@@ -44,6 +44,12 @@ impl Exporter {
             "extra_data",
         ])?;
 
+        if results.is_empty() {
+            println!("⚠️ No blocks collected. CSV contains only header.");
+            wtr.flush()?;
+            return Ok(());
+        }
+
         // Write data
         for lifecycle in results {
             wtr.write_record(&[
@@ -64,7 +70,11 @@ impl Exporter {
                 lifecycle.transactions.type_breakdown.legacy.to_string(),
                 lifecycle.transactions.type_breakdown.eip2930.to_string(),
                 lifecycle.transactions.type_breakdown.eip1559.to_string(),
-                lifecycle.transactions.type_breakdown.eip4844_blob.to_string(),
+                lifecycle
+                    .transactions
+                    .type_breakdown
+                    .eip4844_blob
+                    .to_string(),
                 lifecycle.transactions.failed_count.to_string(),
                 lifecycle.transactions.ordering.anomalies.to_string(),
                 lifecycle.mev.sandwich_attacks.len().to_string(),
@@ -73,7 +83,11 @@ impl Exporter {
                 lifecycle.mev.estimated_mev_eth.to_string(),
                 lifecycle.mev.mev_bot_addresses.len().to_string(),
                 lifecycle.pbs.is_pbs_block.to_string(),
-                lifecycle.pbs.builder_address.clone().unwrap_or_else(|| "".to_string()),
+                lifecycle
+                    .pbs
+                    .builder_address
+                    .clone()
+                    .unwrap_or_else(|| "".to_string()),
                 lifecycle.pbs.extra_data.clone(),
             ])?;
         }

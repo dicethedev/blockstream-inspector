@@ -75,10 +75,10 @@ export ALCHEMY_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
 
 # Analyze a range of blocks and export to CSV
 ./target/release/blockstream-inspector range \
-    --start 18000000 --end 18000100 --output blocks.csv
+    --start 18000000 --end 18000100 --output data/blocks.csv
 
 # Live monitoring
-./target/release/blockstream-inspector live --count 20 --output live.csv
+./target/release/blockstream-inspector live --count 20 --output data/live.csv
 
 # MEV detection
 ./target/release/blockstream-inspector mev --blocks 100 --threshold 0.1
@@ -114,13 +114,13 @@ Running Analysis Scripts
 
 ```bash
 # Run comprehensive analysis
-python3 scripts/analyze.py blocks.csv --all
+python3 scripts/analyze.py data/blocks.csv --all
 
 
 # Specific analyses
-python3 scripts/analyze.py blocks.csv --gas      # Gas metrics only
-python3 scripts/analyze.py blocks.csv --mev      # MEV analysis only
-python3 scripts/analyze.py blocks.csv --timing   # Block timing only
+python3 scripts/analyze.py data/blocks.csv --gas      # Gas metrics only
+python3 scripts/analyze.py data/blocks.csv --mev      # MEV analysis only
+python3 scripts/analyze.py data/blocks.csv --timing   # Block timing only
 ```
 
 ## Features & Metrics
