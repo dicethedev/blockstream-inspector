@@ -76,19 +76,19 @@ The current implementation uses **MEV-Boost**, a sidecar service:
 
 ```mermaid
 graph TD
-    A[Validator<br/>(Proposer)]
-    B(MEV-Boost<br/>Middleware<br/>(Sidecar software))
+    A["Validator / Proposer"]
+    B["MEV-Boost Middleware / Sidecar Software"]
     
     subgraph Relays
-        R1[Relay 1]
-        R2[Relay]
-        R3[Relay 3]
-        R_etc[...]
+        R1["Relay 1"]
+        R2["Relay 2"]
+        R3["Relay 3"]
+        R_etc["..."]
     end
     
     subgraph Builders
-        B1[Builder 1]
-        BN[Builder N]
+        B1["Builder 1"]
+        BN["Builder N"]
     end
     
     A -- "Request best bid" --> B

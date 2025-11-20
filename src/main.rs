@@ -85,6 +85,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+
+    dotenv().ok();
+
     let cli = Cli::parse();
 
     // Determine the RPC URL
