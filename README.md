@@ -90,9 +90,32 @@ export ALCHEMY_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
 
 ### Analyzing Data
 
+Before running any analysis, set up your Python environment:
+
+1. Create and activate a virtual environment
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+2. Install required Python dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+If you don’t have a `requirements.txt`, install manually:
+
+```bash
+pip install pandas numpy matplotlib seaborn
+```
+
+Running Analysis Scripts
+
 ```bash
 # Run comprehensive analysis
 python3 scripts/analyze.py blocks.csv --all
+
 
 # Specific analyses
 python3 scripts/analyze.py blocks.csv --gas      # Gas metrics only
